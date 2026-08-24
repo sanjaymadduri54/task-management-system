@@ -44,7 +44,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5174")
+                List.of("http://localhost:5173")
         );
 
         configuration.setAllowedMethods(
@@ -74,9 +74,10 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+        .requestMatchers("/api/auth/**").permitAll()
+        .anyRequest().authenticated()
+)
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class

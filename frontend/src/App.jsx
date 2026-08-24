@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 const API_URL = "http://localhost:8080";
 
 function App() {
+  // Authentication
   const [showLogin, setShowLogin] = useState(true);
   const [loggedIn, setLoggedIn] = useState(
     Boolean(localStorage.getItem("token"))
@@ -27,26 +28,50 @@ function App() {
   // Edit
   const [editingTaskId, setEditingTaskId] = useState(null);
 
+  // Filters
+const [statusFilter, setStatusFilter] = useState("ALL");
+const [priorityFilter, setPriorityFilter] = useState("ALL");
+const [searchTitle, setSearchTitle] = useState("");
+
+  // Messages
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Task Analytics
-const totalTasks = tasks.length;
+  // Analytics
+  const totalTasks = tasks.length;
 
-const todoTasks = tasks.filter(
-  (task) => task.status === "TODO"
-).length;
+  const todoTasks = tasks.filter(
+    (task) => task.status === "TODO"
+  ).length;
 
-const inProgressTasks = tasks.filter(
-  (task) => task.status === "IN_PROGRESS"
-).length;
+  const inProgressTasks = tasks.filter(
+    (task) => task.status === "IN_PROGRESS"
+  ).length;
 
-const completedTasks = tasks.filter(
-  (task) => task.status === "COMPLETED"
-).length;
+  const completedTasks = tasks.filter(
+    (task) => task.status === "COMPLETED"
+  ).length;
 
-const highPriorityTasks = tasks.filter(
-  (task) => task.priority === "HIGH"
-).length;
+  const highPriorityTasks = tasks.filter(
+    (task) => task.priority === "HIGH"
+  ).length;
+
+  // Filter tasks
+  const filteredTasks = tasks.filter((task) => {
+  const statusMatches =
+    statusFilter === "ALL" || task.status === statusFilter;
+
+  const priorityMatches =
+    priorityFilter === "ALL" ||
+    task.priority === priorityFilter;
+
+  const titleMatches =
+    task.title
+      .toLowerCase()
+      .includes(searchTitle.toLowerCase());
+
+  return statusMatches && priorityMatches && titleMatches;
+});
 
   // Load tasks after login
   useEffect(() => {
@@ -55,21 +80,30 @@ const highPriorityTasks = tasks.filter(
     }
   }, [loggedIn]);
 
-  // LOGIN
+  // ---------------- LOGIN ----------------
+
   const handleLogin = async () => {
     setMessage("");
 
+    if (!loginEmail || !loginPassword) {
+      setMessage("Please enter email and password.");
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: loginEmail,
-          password: loginPassword,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: loginEmail,
+            password: loginPassword,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -78,29 +112,39 @@ const highPriorityTasks = tasks.filter(
         setLoggedIn(true);
         setMessage("");
       } else {
-        setMessage(data.message || "Login failed");
+        setMessage(data.message || "Login failed.");
       }
     } catch (error) {
+      console.error(error);
       setMessage("Unable to connect to the backend.");
     }
   };
 
-  // REGISTER
+  // ---------------- REGISTER ----------------
+
   const handleRegister = async () => {
     setMessage("");
 
+    if (!registerName || !registerEmail || !registerPassword) {
+      setMessage("Please fill in all fields.");
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: registerName,
-          email: registerEmail,
-          password: registerPassword,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: registerName,
+            email: registerEmail,
+            password: registerPassword,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -109,38 +153,58 @@ const highPriorityTasks = tasks.filter(
         setLoggedIn(true);
         setMessage("");
       } else {
-        setMessage(data.message || "Registration failed");
+        setMessage(
+          data.message || "Registration failed."
+        );
       }
     } catch (error) {
+      console.error(error);
       setMessage("Unable to connect to the backend.");
     }
   };
 
-  // GET ALL TASKS
+  // ---------------- GET TASKS ----------------
+
   const getTasks = async () => {
+    setLoading(true);
+
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/tasks`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/tasks`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
         setTasks(data);
-      } else if (response.status === 401 || response.status === 403) {
+      } else if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
         handleLogout();
+      } else {
+        setMessage("Unable to load tasks.");
       }
     } catch (error) {
-      setMessage("Unable to load tasks.");
+      console.error(error);
+      setMessage("Unable to connect to the backend.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // CREATE TASK
+  // ---------------- CREATE TASK ----------------
+
   const createTask = async () => {
+    setMessage("");
+
     if (!title.trim()) {
       setMessage("Please enter a task title.");
       return;
@@ -149,49 +213,60 @@ const highPriorityTasks = tasks.filter(
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/tasks`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          status,
-          priority,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/tasks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title,
+            description,
+            status,
+            priority,
+          }),
+        }
+      );
 
       if (response.ok) {
-        setTitle("");
-        setDescription("");
-        setStatus("TODO");
-        setPriority("MEDIUM");
-
+        clearForm();
         setMessage("Task created successfully!");
-
         getTasks();
       } else {
-        setMessage("Failed to create task.");
+        const data = await response.json().catch(() => null);
+        setMessage(
+          data?.message || "Failed to create task."
+        );
       }
     } catch (error) {
+      console.error(error);
       setMessage("Unable to connect to the backend.");
     }
   };
 
-  // START EDITING TASK
+  // ---------------- START EDITING ----------------
+
   const startEditing = (task) => {
     setEditingTaskId(task.id);
     setTitle(task.title);
-    setDescription(task.description);
+    setDescription(task.description || "");
     setStatus(task.status);
     setPriority(task.priority);
     setMessage("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
-  // UPDATE TASK
+  // ---------------- UPDATE TASK ----------------
+
   const updateTask = async () => {
+    setMessage("");
+
     if (!title.trim()) {
       setMessage("Please enter a task title.");
       return;
@@ -218,44 +293,61 @@ const highPriorityTasks = tasks.filter(
       );
 
       if (response.ok) {
-        setTitle("");
-        setDescription("");
-        setStatus("TODO");
-        setPriority("MEDIUM");
-        setEditingTaskId(null);
-
+        clearForm();
         setMessage("Task updated successfully!");
-
         getTasks();
       } else {
-        setMessage("Failed to update task.");
+        const data = await response.json().catch(() => null);
+        setMessage(
+          data?.message || "Failed to update task."
+        );
       }
     } catch (error) {
+      console.error(error);
       setMessage("Unable to connect to the backend.");
     }
   };
 
-  // CANCEL EDIT
-  const cancelEdit = () => {
+  // ---------------- CLEAR FORM ----------------
+
+  const clearForm = () => {
     setEditingTaskId(null);
     setTitle("");
     setDescription("");
     setStatus("TODO");
     setPriority("MEDIUM");
+  };
+
+  // ---------------- CANCEL EDIT ----------------
+
+  const cancelEdit = () => {
+    clearForm();
     setMessage("");
   };
 
-  // DELETE TASK
+  // ---------------- DELETE TASK ----------------
+
   const deleteTask = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/tasks/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${API_URL}/api/tasks/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok || response.status === 204) {
         setMessage("Task deleted successfully!");
@@ -264,28 +356,40 @@ const highPriorityTasks = tasks.filter(
         setMessage("Failed to delete task.");
       }
     } catch (error) {
+      console.error(error);
       setMessage("Unable to connect to the backend.");
     }
   };
 
-  // LOGOUT
+  // ---------------- LOGOUT ----------------
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     setLoggedIn(false);
     setTasks([]);
+    clearForm();
     setMessage("");
   };
 
+  // =====================================================
   // DASHBOARD
+  // =====================================================
+
   if (loggedIn) {
     return (
       <div style={styles.dashboardContainer}>
 
         {/* HEADER */}
-        <div style={styles.dashboardHeader}>
+
+        <header style={styles.dashboardHeader}>
           <div>
-            <h1>Task Management System</h1>
-            <p>Manage your tasks efficiently</p>
+            <h1 style={styles.headerTitle}>
+              Task Management System
+            </h1>
+
+            <p style={styles.headerSubtitle}>
+              Manage your tasks efficiently
+            </p>
           </div>
 
           <button
@@ -294,42 +398,54 @@ const highPriorityTasks = tasks.filter(
           >
             Logout
           </button>
-        </div>
+        </header>
 
-        <div style={styles.content}>
+        <main style={styles.content}>
 
           {/* ANALYTICS */}
-<div style={styles.analyticsSection}>
 
-  <div style={styles.analyticsCard}>
-    <h3>Total Tasks</h3>
-    <p>{totalTasks}</p>
-  </div>
+          <section style={styles.analyticsSection}>
 
-  <div style={styles.analyticsCard}>
-    <h3>TODO</h3>
-    <p>{todoTasks}</p>
-  </div>
+            <div style={styles.analyticsCard}>
+              <h3>Total Tasks</h3>
+              <p style={styles.analyticsNumber}>
+                {totalTasks}
+              </p>
+            </div>
 
-  <div style={styles.analyticsCard}>
-    <h3>In Progress</h3>
-    <p>{inProgressTasks}</p>
-  </div>
+            <div style={styles.analyticsCard}>
+              <h3>TODO</h3>
+              <p style={styles.analyticsNumber}>
+                {todoTasks}
+              </p>
+            </div>
 
-  <div style={styles.analyticsCard}>
-    <h3>Completed</h3>
-    <p>{completedTasks}</p>
-  </div>
+            <div style={styles.analyticsCard}>
+              <h3>In Progress</h3>
+              <p style={styles.analyticsNumber}>
+                {inProgressTasks}
+              </p>
+            </div>
 
-  <div style={styles.analyticsCard}>
-    <h3>High Priority</h3>
-    <p>{highPriorityTasks}</p>
-  </div>
+            <div style={styles.analyticsCard}>
+              <h3>Completed</h3>
+              <p style={styles.analyticsNumber}>
+                {completedTasks}
+              </p>
+            </div>
 
-</div>
+            <div style={styles.analyticsCard}>
+              <h3>High Priority</h3>
+              <p style={styles.analyticsNumber}>
+                {highPriorityTasks}
+              </p>
+            </div>
 
-          {/* CREATE / UPDATE TASK */}
-          <div style={styles.createCard}>
+          </section>
+
+          {/* CREATE / UPDATE */}
+
+          <section style={styles.createCard}>
 
             <h2>
               {editingTaskId
@@ -341,7 +457,9 @@ const highPriorityTasks = tasks.filter(
               type="text"
               placeholder="Task title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) =>
+                setTitle(e.target.value)
+              }
               style={styles.input}
             />
 
@@ -363,10 +481,14 @@ const highPriorityTasks = tasks.filter(
                 }
                 style={styles.select}
               >
-                <option value="TODO">TODO</option>
+                <option value="TODO">
+                  TODO
+                </option>
+
                 <option value="IN_PROGRESS">
                   IN_PROGRESS
                 </option>
+
                 <option value="COMPLETED">
                   COMPLETED
                 </option>
@@ -379,15 +501,22 @@ const highPriorityTasks = tasks.filter(
                 }
                 style={styles.select}
               >
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
+                <option value="LOW">
+                  LOW
+                </option>
+
+                <option value="MEDIUM">
+                  MEDIUM
+                </option>
+
+                <option value="HIGH">
+                  HIGH
+                </option>
               </select>
 
             </div>
 
             {editingTaskId ? (
-
               <div style={styles.buttonRow}>
 
                 <button
@@ -405,16 +534,13 @@ const highPriorityTasks = tasks.filter(
                 </button>
 
               </div>
-
             ) : (
-
               <button
                 style={styles.createButton}
                 onClick={createTask}
               >
                 + Create Task
               </button>
-
             )}
 
             {message && (
@@ -423,20 +549,104 @@ const highPriorityTasks = tasks.filter(
               </p>
             )}
 
-          </div>
+          </section>
+
+          {/* FILTERS */}
+
+          <section style={styles.filterCard}>
+
+            <h2>Filter Tasks</h2>
+            <input
+  type="text"
+  placeholder="Search tasks by title..."
+  value={searchTitle}
+  onChange={(e) => setSearchTitle(e.target.value)}
+  style={styles.input}
+/>
+
+            <div style={styles.selectRow}>
+
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value)
+                }
+                style={styles.select}
+              >
+                <option value="ALL">
+                  All Statuses
+                </option>
+
+                <option value="TODO">
+                  TODO
+                </option>
+
+                <option value="IN_PROGRESS">
+                  IN_PROGRESS
+                </option>
+
+                <option value="COMPLETED">
+                  COMPLETED
+                </option>
+              </select>
+
+              <select
+                value={priorityFilter}
+                onChange={(e) =>
+                  setPriorityFilter(e.target.value)
+                }
+                style={styles.select}
+              >
+                <option value="ALL">
+                  All Priorities
+                </option>
+
+                <option value="LOW">
+                  LOW
+                </option>
+
+                <option value="MEDIUM">
+                  MEDIUM
+                </option>
+
+                <option value="HIGH">
+                  HIGH
+                </option>
+              </select>
+
+            </div>
+
+          </section>
 
           {/* TASK LIST */}
-          <div style={styles.taskSection}>
 
-            <h2>My Tasks</h2>
+          <section style={styles.taskSection}>
 
-            {tasks.length === 0 ? (
+            <div style={styles.taskSectionHeader}>
 
-              <p>No tasks found.</p>
+              <h2>My Tasks</h2>
 
-            ) : (
+              <span style={styles.taskCount}>
+                {filteredTasks.length} task(s)
+              </span>
 
-              tasks.map((task) => (
+            </div>
+
+            {loading ? (
+
+  <div style={styles.emptyState}>
+    <p>Loading tasks...</p>
+  </div>
+
+) : filteredTasks.length === 0 ? (
+
+  <div style={styles.emptyState}>
+    <p>No tasks found.</p>
+  </div>
+
+) : (
+
+              filteredTasks.map((task) => (
 
                 <div
                   style={styles.taskCard}
@@ -445,21 +655,29 @@ const highPriorityTasks = tasks.filter(
 
                   <div style={styles.taskInfo}>
 
-                    <h3>{task.title}</h3>
+                    <h3 style={styles.taskTitle}>
+                      {task.title}
+                    </h3>
 
-                    <p>{task.description}</p>
+                    <p style={styles.taskDescription}>
+                      {task.description}
+                    </p>
 
-                    <span style={styles.status}>
-                      Status: {task.status}
-                    </span>
+                    <div>
 
-                    <span style={styles.priority}>
-                      Priority: {task.priority}
-                    </span>
+                      <span style={styles.status}>
+                        Status: {task.status}
+                      </span>
+
+                      <span style={styles.priority}>
+                        Priority: {task.priority}
+                      </span>
+
+                    </div>
 
                   </div>
 
-                  <div>
+                  <div style={styles.taskButtons}>
 
                     <button
                       style={styles.editButton}
@@ -487,14 +705,18 @@ const highPriorityTasks = tasks.filter(
 
             )}
 
-          </div>
+          </section>
 
-        </div>
+        </main>
+
       </div>
     );
   }
 
-  // LOGIN / REGISTER PAGE
+  // =====================================================
+  // LOGIN / REGISTER
+  // =====================================================
+
   return (
     <div style={styles.container}>
 
@@ -507,6 +729,8 @@ const highPriorityTasks = tasks.filter(
         <p style={styles.subtitle}>
           Manage your tasks efficiently
         </p>
+
+        {/* TABS */}
 
         <div style={styles.tabs}>
 
@@ -539,6 +763,8 @@ const highPriorityTasks = tasks.filter(
           </button>
 
         </div>
+
+        {/* LOGIN */}
 
         {showLogin ? (
 
@@ -582,6 +808,8 @@ const highPriorityTasks = tasks.filter(
           </div>
 
         ) : (
+
+          /* REGISTER */
 
           <div>
 
@@ -635,12 +863,16 @@ const highPriorityTasks = tasks.filter(
         )}
 
       </div>
+
     </div>
   );
 }
 
-const styles = {
+// =====================================================
+// STYLES
+// =====================================================
 
+const styles = {
   container: {
     minHeight: "100vh",
     display: "flex",
@@ -648,10 +880,12 @@ const styles = {
     alignItems: "center",
     backgroundColor: "#f4f6f8",
     fontFamily: "Arial, sans-serif",
+    padding: "20px",
   },
 
   card: {
     width: "400px",
+    maxWidth: "100%",
     padding: "30px",
     backgroundColor: "white",
     borderRadius: "12px",
@@ -680,6 +914,7 @@ const styles = {
     border: "none",
     backgroundColor: "#eee",
     cursor: "pointer",
+    fontSize: "15px",
   },
 
   activeTab: {
@@ -689,6 +924,7 @@ const styles = {
     backgroundColor: "#1976d2",
     color: "white",
     cursor: "pointer",
+    fontSize: "15px",
   },
 
   input: {
@@ -724,6 +960,7 @@ const styles = {
     padding: "10px",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    backgroundColor: "white",
   },
 
   buttonRow: {
@@ -743,7 +980,7 @@ const styles = {
   },
 
   createButton: {
-    flex: 1,
+    width: "100%",
     padding: "12px",
     border: "none",
     borderRadius: "6px",
@@ -771,6 +1008,7 @@ const styles = {
     backgroundColor: "#d32f2f",
     color: "white",
     cursor: "pointer",
+    fontSize: "14px",
   },
 
   message: {
@@ -794,6 +1032,15 @@ const styles = {
       "0 2px 8px rgba(0,0,0,0.1)",
   },
 
+  headerTitle: {
+    margin: 0,
+  },
+
+  headerSubtitle: {
+    margin: "5px 0 0",
+    color: "#666",
+  },
+
   content: {
     maxWidth: "1000px",
     margin: "30px auto",
@@ -801,26 +1048,42 @@ const styles = {
   },
 
   analyticsSection: {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-  gap: "15px",
-  marginBottom: "30px",
-},
+    display: "grid",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "15px",
+    marginBottom: "30px",
+  },
 
-analyticsCard: {
-  backgroundColor: "white",
-  padding: "20px",
-  borderRadius: "10px",
-  textAlign: "center",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-},
+  analyticsCard: {
+    backgroundColor: "white",
+    padding: "20px",
+    borderRadius: "10px",
+    textAlign: "center",
+    boxShadow:
+      "0 2px 8px rgba(0,0,0,0.1)",
+  },
 
+  analyticsNumber: {
+    fontSize: "30px",
+    fontWeight: "bold",
+    margin: "10px 0 0",
+  },
 
   createCard: {
     backgroundColor: "white",
     padding: "25px",
     borderRadius: "10px",
-    marginBottom: "30px",
+    marginBottom: "20px",
+    boxShadow:
+      "0 2px 8px rgba(0,0,0,0.1)",
+  },
+
+  filterCard: {
+    backgroundColor: "white",
+    padding: "25px",
+    borderRadius: "10px",
+    marginBottom: "20px",
     boxShadow:
       "0 2px 8px rgba(0,0,0,0.1)",
   },
@@ -833,26 +1096,52 @@ analyticsCard: {
       "0 2px 8px rgba(0,0,0,0.1)",
   },
 
+  taskSectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px",
+  },
+
+  taskCount: {
+    color: "#666",
+    fontSize: "14px",
+  },
+
   taskCard: {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "20px",
-  padding: "20px",
-  marginBottom: "15px",
-  border: "1px solid #ddd",
-  borderRadius: "10px",
-  backgroundColor: "#fafafa",
-},
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "20px",
+    padding: "20px",
+    marginBottom: "15px",
+    border: "1px solid #ddd",
+    borderRadius: "10px",
+    backgroundColor: "#fafafa",
+  },
 
   taskInfo: {
-  flex: 1,
-  minWidth: 0,
-},
+    flex: 1,
+    minWidth: 0,
+  },
+
+  taskTitle: {
+    marginTop: 0,
+    marginBottom: "8px",
+  },
+
+  taskDescription: {
+    color: "#555",
+    marginBottom: "15px",
+  },
+
+  taskButtons: {
+    display: "flex",
+    gap: "8px",
+  },
 
   editButton: {
     padding: "8px 14px",
-    marginRight: "8px",
     border: "none",
     borderRadius: "5px",
     backgroundColor: "#1976d2",
@@ -884,6 +1173,12 @@ analyticsCard: {
     backgroundColor: "#fff3e0",
     borderRadius: "5px",
     fontSize: "13px",
+  },
+
+  emptyState: {
+    textAlign: "center",
+    padding: "30px",
+    color: "#666",
   },
 };
 

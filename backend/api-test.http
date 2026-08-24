@@ -4,6 +4,46 @@ Content-Type: application/json
 
 {
     "name": "Test User",
-    "email": "testuser@gmail.com",
-    "password": "password123"
+    "email": "your-test-email@example.com",
+    "password": "YOUR_TEST_PASSWORD"
 }
+
+### Login existing user
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "your-test-email@example.com",
+    "password": "YOUR_TEST_PASSWORD"
+}
+
+### Create a new task
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+    "title": "Complete Task Management System",
+    "description": "Finish backend and frontend development",
+    "status": "TODO"
+}
+
+### Get all tasks
+GET http://localhost:8080/api/tasks
+Authorization: Bearer YOUR_JWT_TOKEN
+
+### Update task
+PUT http://localhost:8080/api/tasks/5
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+
+{
+    "title": "Complete Full Stack Task Management System",
+    "description": "Backend is working; now complete frontend",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH"
+}
+
+### Delete task
+DELETE http://localhost:8080/api/tasks/5
+Authorization: Bearer YOUR_JWT_TOKEN

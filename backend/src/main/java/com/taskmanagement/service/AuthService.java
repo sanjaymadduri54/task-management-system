@@ -1,3 +1,4 @@
+
 package com.taskmanagement.service;
 
 import com.taskmanagement.dto.LoginRequest;
@@ -61,4 +62,18 @@ public class AuthService {
 
         return jwtService.generateToken(user.getEmail());
     }
+
+    public void resetPassword(String email, String newPassword) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        user.setPassword(
+                passwordEncoder.encode(newPassword)
+        );
+
+        userRepository.save(user);
+    }
 }
+
