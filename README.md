@@ -2,52 +2,20 @@
 
 A full-stack web application for managing personal tasks, built with **React** and **Spring Boot**. The application provides secure JWT-based authentication, task management, search and filtering, and a dashboard with task analytics.
 
-## 🚀 Features
-
-### 🔐 Authentication & Security
+## Features
 
 * User registration and login
-* JWT-based authentication and authorization
-* Secure password handling
-* Protected task APIs
-* Environment variables for sensitive configuration
-* CORS configuration for frontend-backend communication
-
-### 📝 Task Management
-
-* Create tasks
-* View personal tasks
-* Update tasks
-* Delete tasks
-* Manage task status
-* Manage task priority
-
-### 🔎 Search & Filtering
-
-* Search tasks by title
+* JWT-based authentication
+* Create, view, update, and delete tasks
 * Filter tasks by status
 * Filter tasks by priority
+* Search tasks by title
+* Dashboard with task analytics
+* Loading and error states
+* REST API integration
+* MySQL database integration
 
-### 📊 Dashboard Analytics
-
-The dashboard provides basic task insights:
-
-* Total Tasks
-* TODO Tasks
-* In Progress Tasks
-* Completed Tasks
-* High Priority Tasks
-
-### 🎨 User Interface
-
-* Clean and simple dashboard
-* Task list view
-* Create and update task form
-* Loading states
-* Error handling
-* Responsive user interface
-
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 
@@ -78,7 +46,7 @@ The dashboard provides basic task insights:
 * Git
 * GitHub
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```text
 task-management-system/
@@ -100,7 +68,7 @@ task-management-system/
 └── README.md
 ```
 
-## 🔄 Application Flow
+## Application Flow
 
 ```text
 User
@@ -120,27 +88,7 @@ Spring Boot Backend
 MySQL Database
 ```
 
-## 🔐 Configuration & Security
-
-Sensitive configuration is kept outside the source code using environment variables.
-
-The backend uses:
-
-```text
-DB_PASSWORD
-JWT_SECRET
-```
-
-The local `application.properties` file references these variables instead of storing the actual credentials:
-
-```properties
-spring.datasource.password=${DB_PASSWORD}
-jwt.secret=${JWT_SECRET}
-```
-
-> Never commit actual database passwords, JWT secrets, or other sensitive credentials to GitHub.
-
-## ▶️ Running the Project Locally
+## Running the Project Locally
 
 ### Prerequisites
 
@@ -150,14 +98,14 @@ jwt.secret=${JWT_SECRET}
 * MySQL
 * Git
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/sanjaymadduri54/task-management-system.git
 cd task-management-system
 ```
 
-### 2. Configure the database
+### 2. Configure the Database
 
 Create the required MySQL database and configure the following environment variables on your system:
 
@@ -166,7 +114,7 @@ DB_PASSWORD
 JWT_SECRET
 ```
 
-### 3. Start the backend
+### 3. Start the Backend
 
 From the project root:
 
@@ -181,7 +129,7 @@ The Spring Boot backend runs on:
 http://localhost:8080
 ```
 
-### 4. Start the frontend
+### 4. Start the Frontend
 
 Open another terminal:
 
@@ -193,7 +141,7 @@ npm run dev
 
 Open the local URL displayed by Vite in your browser.
 
-## 🔗 Main API Endpoints
+## Main API Endpoints
 
 ### Authentication
 
@@ -213,7 +161,7 @@ DELETE /api/tasks/{id}
 
 Task endpoints require authenticated requests using JWT bearer authentication.
 
-## 🧪 Testing
+## Testing
 
 The application was tested by verifying:
 
@@ -237,11 +185,21 @@ API requests can also be tested using the included:
 backend/api-test.http
 ```
 
-## 📸 Screenshots
+## Screenshots
 
-Screenshots of the application dashboard, task management interface, search/filter functionality, and analytics dashboard can be added here.
+### Login & Register
 
-## 📌 Future Improvements
+![Login and Register](screenshots/login-register.png)
+
+### Dashboard
+
+![Task Management Dashboard](screenshots/dashboard.png)
+
+### Tasks, Search and Filters
+
+![Tasks and Filters](screenshots/tasks-and-filters.png)
+
+## Future Improvements
 
 Possible future enhancements include:
 
@@ -253,7 +211,7 @@ Possible future enhancements include:
 * Cloud deployment
 * Automated unit and integration testing
 
-## 👨‍💻 Project Summary
+## Project Summary
 
 **Task Management System**
 
@@ -262,14 +220,5 @@ A full-stack project demonstrating practical experience with:
 **React · Java · Spring Boot · Spring Security · JWT · REST APIs · MySQL · Git/GitHub**
 
 **GitHub Repository:**
+
 https://github.com/sanjaymadduri54/task-management-system
-
-## Screenshots
-
-### Dashboard
-
-![Task Management Dashboard](screenshots/dashboard.png)
-
-### Tasks, Search and Filters
-
-![Tasks and Filters](screenshots/tasks-and-filters.png)
