@@ -263,3 +263,13 @@ A full-stack project demonstrating practical experience with:
 
 **GitHub Repository:**
 https://github.com/sanjaymadduri54/task-management-system
+
+## Screenshots
+
+### Dashboard
+
+![Task Management Dashboard](screenshots/dashboard.png)
+
+### Tasks, Search and Filters
+
+![Tasks and Filters](screenshots/tasks-and-filters.png)
